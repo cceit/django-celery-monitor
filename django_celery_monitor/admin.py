@@ -6,15 +6,15 @@ from __future__ import absolute_import, unicode_literals
 from django.contrib import admin
 from django.contrib.admin import helpers
 from django.contrib.admin.views import main as main_views
-from django.shortcuts import render_to_response
-from django.template import RequestContext
+from django.shortcuts import render
 from django.utils.encoding import force_text
 from django.utils.html import escape
+from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext_lazy as _
 
 from celery import current_app
 from celery import states
-from celery.task.control import broadcast, revoke, rate_limit
+from celery.app.control import Control
 from celery.utils.text import abbrtask
 
 from .models import TaskState, WorkerState
@@ -48,7 +48,7 @@ def colored_state(task):
     """
     state = escape(task.state)
     color = TASK_STATE_COLORS.get(task.state, 'black')
-    return '<b><span style="color: {0};">{1}</span></b>'.format(color, state)
+    return mark_safe('<b><span style="color: {0};">{1}</span></b>'.format(color, state))
 
 
 @display_field(_('state'), 'last_heartbeat')
@@ -59,14 +59,14 @@ def node_state(node):
     """
     state = node.is_alive() and 'ONLINE' or 'OFFLINE'
     color = NODE_STATE_COLORS[state]
-    return '<b><span style="color: {0};">{1}</span></b>'.format(color, state)
+    return mark_safe('<b><span style="color: {0};">{1}</span></b>'.format(color, state))
 
 
 @display_field(_('ETA'), 'eta')
 def eta(task):
     """Return the task ETA as a grey "none" if none is provided."""
     if not task.eta:
-        return '<span style="color: gray;">none</span>'
+        return mark_safe('<span style="color: gray;">none</span>')
     return escape(make_aware(task.eta))
 
 
@@ -78,18 +78,18 @@ def tstamp(task):
     it as a "natural date" -- a human readable version.
     """
     value = make_aware(task.tstamp)
-    return '<div title="{0}">{1}</div>'.format(
-        escape(str(value)), escape(naturaldate(value)),
-    )
+    return mark_safe('<div title="{0}">{1}</div>'.format(
+                        escape(str(value)), escape(naturaldate(value)),
+    ))
 
 
 @display_field(_('name'), 'name')
 def name(task):
     """Return the task name and abbreviates it to maximum of 16 characters."""
     short_name = abbrtask(task.name, 16)
-    return '<div title="{0}"><b>{1}</b></div>'.format(
-        escape(task.name), escape(short_name),
-    )
+    return mark_safe('<div title="{0}"><b>{1}</b></div>'.format(
+                        escape(task.name), escape(short_name),
+    ))
 
 
 class ModelMonitor(admin.ModelAdmin):
@@ -97,12 +97,13 @@ class ModelMonitor(admin.ModelAdmin):
 
     can_add = False
     can_delete = False
+    detail_title = ''
 
     def get_changelist(self, request, **kwargs):
         """Return the custom change list class we defined above."""
         return MonitorList
 
-    def change_view(self, request, object_id, extra_context=None):
+    def change_view(self, request, object_id, form_url='', extra_context=None):
         """Make sure the title is set correctly."""
         extra_context = extra_context or {}
         extra_context.setdefault('title', self.detail_title)
@@ -140,8 +141,8 @@ class TaskMonitor(ModelMonitor):
             'classes': ('extrapretty', ),
         }),
         ('Details', {
-            'classes': ('collapse', 'extrapretty'),
             'fields': ('result', 'traceback', 'expires'),
+            'classes': ('extrapretty',),
         }),
     )
     list_display = (
@@ -173,22 +174,21 @@ class TaskMonitor(ModelMonitor):
 
     @action(_('Revoke selected tasks'))
     def revoke_tasks(self, request, queryset):
-        with current_app.default_connection() as connection:
-            for state in queryset:
-                revoke(state.task_id, connection=connection)
+        control = Control(current_app)
+        for state in queryset:
+            control.revoke(state.task_id)
 
     @action(_('Terminate selected tasks'))
     def terminate_tasks(self, request, queryset):
-        with current_app.default_connection() as connection:
-            for state in queryset:
-                revoke(state.task_id, connection=connection, terminate=True)
+        control = Control(current_app)
+        for state in queryset:
+            control.revoke(state.task_id, terminate=True)
 
     @action(_('Kill selected tasks'))
     def kill_tasks(self, request, queryset):
-        with current_app.default_connection() as connection:
-            for state in queryset:
-                revoke(state.task_id, connection=connection,
-                       terminate=True, signal='KILL')
+        control = Control(current_app)
+        for state in queryset:
+            control.revoke(state.task_id, terminate=True, signal='KILL')
 
     @action(_('Rate limit selected tasks'))
     def rate_limit_tasks(self, request, queryset):
@@ -197,9 +197,9 @@ class TaskMonitor(ModelMonitor):
         app_label = opts.app_label
         if request.POST.get('post'):
             rate = request.POST['rate_limit']
-            with current_app.default_connection() as connection:
-                for task_name in tasks:
-                    rate_limit(task_name, rate, connection=connection)
+            control = Control(current_app)
+            for task_name in tasks:
+                control.rate_limit(task_name, rate)
             return None
 
         context = {
@@ -211,9 +211,10 @@ class TaskMonitor(ModelMonitor):
             'app_label': app_label,
         }
 
-        return render_to_response(
-            self.rate_limit_confirmation_template, context,
-            context_instance=RequestContext(request),
+        return render(
+            request,
+            self.rate_limit_confirmation_template,
+            context,
         )
 
     def get_actions(self, request):
@@ -241,17 +242,18 @@ class WorkerMonitor(ModelMonitor):
 
     @action(_('Shutdown selected worker nodes'))
     def shutdown_nodes(self, request, queryset):
-        broadcast('shutdown', destination=[n.hostname for n in queryset])
+        control = Control(current_app)
+        control.broadcast('shutdown', destination=[n.hostname for n in queryset])
 
     @action(_('Enable event mode for selected nodes.'))
     def enable_events(self, request, queryset):
-        broadcast('enable_events',
-                  destination=[n.hostname for n in queryset])
+        control = Control(current_app)
+        control.broadcast('enable_events', destination=[n.hostname for n in queryset])
 
     @action(_('Disable event mode for selected nodes.'))
     def disable_events(self, request, queryset):
-        broadcast('disable_events',
-                  destination=[n.hostname for n in queryset])
+        control = Control(current_app)
+        control.broadcast('disable_events', destination=[n.hostname for n in queryset])
 
     def get_actions(self, request):
         actions = super(WorkerMonitor, self).get_actions(request)

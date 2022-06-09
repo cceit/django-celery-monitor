@@ -2,13 +2,14 @@
 Celery Monitoring for Django
 ============================
 
-:Version: 1.1.2
+:Version: 1.2.0
 :Web: https://django-celery-monitor.readthedocs.io/
-:Download: https://pypi.org/project/django_celery_monitor/
-:Source: https://github.com/jazzband/django-celery-monitor
+:Download: https://github.com/cceit/django-celery-monitor
+:Source: https://github.com/cceit/django-celery-monitor
 :Keywords: django, celery, events, monitoring
 
-|jazzband| |build-status| |coverage| |license| |wheel| |pyversion| |pyimp|
+..
+    |jazzband| |build-status| |coverage| |license| |wheel| |pyversion| |pyimp|
 
 About
 =====
@@ -45,7 +46,7 @@ To install using `pip`,:
 
 .. code-block:: console
 
-    $ pip install -U django_celery_monitor
+    $ pip install git+https://github.com/cceit/django-celery-monitor.git
 
 Usage
 =====
@@ -56,7 +57,7 @@ To use this with your project you need to follow these steps:
 
    .. code-block:: console
 
-      $ pip install django_celery_monitor
+      $ pip install git+https://github.com/cceit/django-celery-monitor.git
 
 #. Add ``django_celery_monitor`` to ``INSTALLED_APPS`` in your
    Django project's ``settings.py``::

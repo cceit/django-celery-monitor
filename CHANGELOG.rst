@@ -3,6 +3,16 @@
 ================
  Change history
 ================
+.. _version-1.2.0-RC1:
+
+:release-date: 2022-06-09 2:00 p.m. UTC-5
+:release-by: Micah Morgan
+
+- Updates Task / Monitor control actions to work with Celery 4.
+- Fixes html rendering on Task / Monitor list view fields.
+- Removes 'collapsed' class from Details section of
+- Renames some variables to not shadow imports.
+- Removes ExtendedQuerySet as all functionality is now available in QuerySet.
 
 .. _version-1.1.2:
 
