@@ -54,6 +54,7 @@ class WorkerState(models.Model):
 
     @property
     def heartbeat_timestamp(self):
+        # noinspection PyUnresolvedReferences
         return mktime(self.last_heartbeat.timetuple())
 
 

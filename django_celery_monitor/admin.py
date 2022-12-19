@@ -193,6 +193,7 @@ class TaskMonitor(ModelMonitor):
     @action(_('Rate limit selected tasks'))
     def rate_limit_tasks(self, request, queryset):
         tasks = set([task.name for task in queryset])
+        # noinspection PyProtectedMember
         opts = self.model._meta
         app_label = opts.app_label
         if request.POST.get('post'):
