@@ -3,7 +3,13 @@
 ================
  Change history
 ================
-.. _version-1.2.0-RC1:
+.. _version-1.2.1:
+:release-date: 2022-06-09 2:00 p.m. UTC-5
+:release-by: Micah Morgan
+
+- Updates to Django 4
+
+.. _version-1.2.0:
 
 :release-date: 2022-06-09 2:00 p.m. UTC-5
 :release-by: Micah Morgan

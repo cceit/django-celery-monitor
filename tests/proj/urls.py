@@ -1,8 +1,8 @@
 from __future__ import absolute_import, unicode_literals
 
-from django.conf.urls import url
+from django.urls import path
 from django.contrib import admin
 
 urlpatterns = [
-    url(r'^admin/', admin.site.urls),
+    path(r'admin/', admin.site.urls),
 ]

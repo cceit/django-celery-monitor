@@ -2,7 +2,7 @@
 Celery Monitoring for Django
 ============================
 
-:Version: 1.2.0
+:Version: 1.3.0
 :Web: https://django-celery-monitor.readthedocs.io/
 :Download: https://github.com/cceit/django-celery-monitor
 :Source: https://github.com/cceit/django-celery-monitor
@@ -26,7 +26,7 @@ two models with the current state of the Celery workers and tasks.
 History
 =======
 
-This package is a Celery 4 compatible port of the Django admin based
+This package is a Celery 5 compatible port of the Django admin based
 monitoring feature that was included in the old
 `django-celery <https://pypi.python.org/pypi/django-celery>`_ package which
 is only compatible with Celery < 4.0.

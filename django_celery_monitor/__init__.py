@@ -10,8 +10,8 @@ import re
 
 from collections import namedtuple
 
-__version__ = '1.2.0'
-__author__ = 'CCEIT'
+__version__ = '1.2.1'
+__author__ = 'OUIT-DIG'
 __contact__ = 'mnmorgan@ou.edu'
 __homepage__ = 'https://github.com/cceit/django-celery-monitor'
 __docformat__ = 'restructuredtext'
