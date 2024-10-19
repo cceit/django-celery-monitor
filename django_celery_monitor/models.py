@@ -1,6 +1,7 @@
 """The data models for the task and worker states."""
 from __future__ import absolute_import, unicode_literals
 
+from calendar import timegm
 from time import time, mktime, gmtime
 
 from django.db import models
@@ -48,14 +49,15 @@ class WorkerState(models.Model):
         """Return whether the worker is currently alive or not."""
         if self.last_heartbeat:
             # Use UTC timestamp if USE_TZ is true, or else use local timestamp
-            timestamp = mktime(gmtime()) if settings.USE_TZ else time()
+            timestamp = timegm(gmtime()) if settings.USE_TZ else time()
             return timestamp < heartbeat_expires(self.heartbeat_timestamp)
         return False
 
     @property
     def heartbeat_timestamp(self):
         # noinspection PyUnresolvedReferences
-        return mktime(self.last_heartbeat.timetuple())
+        last_beat = self.last_heartbeat.timetuple()
+        return timegm(last_beat) if settings.USE_TZ else mktime(last_beat)
 
 
 class TaskState(models.Model):
